@@ -19,7 +19,7 @@ def add_methods(resource, s, auth=None):
         setattr(resource, rel, method_class.process)
 
 
-class Resource(object):
+class Resource(dict):
 
     def __init__(self, url, data=None, schema=None,
                  auth=None, response=None, timeout=30):
@@ -40,10 +40,22 @@ class Resource(object):
     def __iter__(self):
         return iter(self.data)
 
-    def __getitem__(self, attr):
-        if attr in self.data:
-            return self.data[attr]
+    def __getitem__(self, key):
+        if key in self.data:
+            return self.data[key]
         raise KeyError
+
+    def __setitem__(self, key, value):
+        self.data[key] = value
+
+    def __delitem__(self, key):
+        del self.data[key]
+
+    def __len__(self):
+        return len(self.data)
+
+    def __contains__(self, key):
+        return key in self.data
 
     def is_valid(self):
         try:

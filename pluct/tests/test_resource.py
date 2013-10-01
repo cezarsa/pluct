@@ -212,6 +212,7 @@ class ResourceTestCase(TestCase):
             ]
         }
         app = resource.Resource(url="appurl.com", data=data, schema=s)
+        self.assertTrue(app.is_valid())
         app.data['items'][0].item()
         url = 'http://localhost/foos/1/'
         get.assert_called_with(url=url,
