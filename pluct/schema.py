@@ -8,7 +8,7 @@ import requests
 
 class Schema(object):
     def __init__(self, url, type=None, title=None, required=None,
-                 properties=None, links=None):
+                 properties=None, links=None, items=None):
         self.url = url
         self.type = type
         if required:
@@ -18,6 +18,8 @@ class Schema(object):
             self.properties = properties
         if links:
             self.links = links
+        if items:
+            self.items = items
 
 
 def get(url, auth=None):

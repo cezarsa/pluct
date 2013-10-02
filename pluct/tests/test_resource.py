@@ -219,6 +219,39 @@ class ResourceTestCase(TestCase):
                                headers={'content-type': 'application/json'},
                                timeout=30)
 
+    @patch('pluct.resource.from_response')
+    @patch("requests.get")
+    def test_schema_with_base_type_array(self, get, from_response):
+        s = schema.Schema(
+            title="title",
+            type="array",
+            url="url.com",
+            items={
+                'type': 'object',
+                'properties': {
+                    'id': {
+                        'type': 'integer'
+                    }
+                },
+                'links': [{
+                    "href": "http://localhost/foos/{id}/",
+                    "method": "GET",
+                    "rel": "item",
+                }]
+            }
+        )
+        data = [
+            {'id': '1'},
+            {'id': '2'}
+        ]
+        app = resource.Resource(url="appurl.com", data=data, schema=s)
+        self.assertTrue(app.is_valid())
+        app.data[0].item()
+        url = 'http://localhost/foos/1/'
+        get.assert_called_with(url=url,
+                               headers={'content-type': 'application/json'},
+                               timeout=30)
+
 
 class FromResponseTestCase(TestCase):
 
