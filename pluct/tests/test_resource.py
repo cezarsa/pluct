@@ -45,10 +45,10 @@ class ResourceTestCase(TestCase):
         self.headers = {
             'content-type': 'application/json; profile=url.com'
         }
-        mock = Mock(headers=self.headers)
-        mock.json.return_value = self.data
-        get.return_value = mock
         self.url = "http://app.com/content"
+        response_mock = Mock(headers=self.headers, url=self.url)
+        response_mock.json.return_value = self.data
+        get.return_value = response_mock
         self.auth = {"type": "t", "credentials": "c"}
         self.result = resource.get(url=self.url, auth=self.auth)
         schema_get.assert_called_with("url.com", self.auth)
@@ -68,7 +68,7 @@ class ResourceTestCase(TestCase):
         self.assertTrue(hasattr(self.result, "log"))
         self.assertTrue(hasattr(self.result, "env"))
         self.result.log()
-        get.assert_called_with(url='/apps/repos/log',
+        get.assert_called_with(url='http://app.com/apps/repos/log',
                                headers={'content-type': 'application/json',
                                         'Authorization': 't c'},
                                timeout=30)
@@ -89,7 +89,7 @@ class ResourceTestCase(TestCase):
         mock = Mock(headers={})
         mock.json.return_value = data
         get.return_value = mock
-        result = resource.get(url="appurl.com", auth=None)
+        result = resource.get(url="http://appurl.com", auth=None)
         self.assertFalse(result.is_valid())
 
     def test_is_valid(self):
@@ -102,11 +102,11 @@ class ResourceTestCase(TestCase):
             u'name': u'repos',
             u'platform': u'repos',
         }
-        app = resource.Resource(url="appurl.com", data=data,
+        app = resource.Resource(url="http://appurl.com", data=data,
                                 schema=self.schema)
 
         app.log(lines=10)
-        url = '/apps/repos/log?lines=10'
+        url = 'http://appurl.com/apps/repos/log?lines=10'
         get.assert_called_with(
             url=url,
             headers={'content-type': 'application/json'},
@@ -126,11 +126,11 @@ class ResourceTestCase(TestCase):
             u'platform': u'repos',
         }
         self.schema.links[0]['href'] = '/apps/{name}/log/{lines}'
-        app = resource.Resource(url="appurl.com", data=data,
+        app = resource.Resource(url="http://appurl.com", data=data,
                                 schema=self.schema)
 
         app.log(lines=10, source="app")
-        url = '/apps/repos/log/10?source=app'
+        url = 'http://appurl.com/apps/repos/log/10?source=app'
         get.assert_called_with(
             url=url,
             headers={'content-type': 'application/json'},
@@ -145,11 +145,11 @@ class ResourceTestCase(TestCase):
             u'platform': u'repos',
         }
         self.schema.links[0]['href'] = '/apps/{name}/log/{lines}'
-        app = resource.Resource(url="appurl.com", data=data,
+        app = resource.Resource(url="http://appurl.com", data=data,
                                 schema=self.schema, timeout=10)
 
         app.log(lines=10, source="app")
-        url = '/apps/repos/log/10?source=app'
+        url = 'http://appurl.com/apps/repos/log/10?source=app'
         get.assert_called_with(
             url=url,
             headers={'content-type': 'application/json'},
@@ -167,7 +167,7 @@ class ResourceTestCase(TestCase):
             "rel": "example"
         }
         self.schema.links.append(link)
-        app = resource.Resource(url="appurl.com", data=data,
+        app = resource.Resource(url="http://appurl.com", data=data,
                                 schema=self.schema)
 
         app.example(context_name='context', name='value1')
@@ -211,13 +211,42 @@ class ResourceTestCase(TestCase):
                 {'id': 2}
             ]
         }
-        app = resource.Resource(url="appurl.com", data=data, schema=s)
+        app = resource.Resource(url="http://appurl.com", data=data, schema=s)
         self.assertTrue(app.is_valid())
         app.data['items'][0].item()
         url = 'http://localhost/foos/1/'
         get.assert_called_with(url=url,
                                headers={'content-type': 'application/json'},
                                timeout=30)
+
+    @patch('pluct.resource.from_response')
+    @patch("requests.get")
+    def test_handle_links_with_relative_and_absolute_urls(self, get, resource_from_response):
+        links = [{
+            "href": "{name}",
+            "method": "GET",
+            "rel": "relative_link"
+        }, {
+            "href": "/{name}",
+            "method": "GET",
+            "rel": "absolute_link"
+        }]
+        self.schema.links += links
+        app = resource.Resource(url="http://appurl.com/something/", data=self.data,
+                                schema=self.schema)
+
+        app.relative_link()
+        get.assert_called_with(
+            url='http://appurl.com/something/repos',
+            headers={'content-type': 'application/json'},
+            timeout=30
+        )
+        app.absolute_link()
+        get.assert_called_with(
+            url='http://appurl.com/repos',
+            headers={'content-type': 'application/json'},
+            timeout=30
+        )
 
 
 class FromResponseTestCase(TestCase):

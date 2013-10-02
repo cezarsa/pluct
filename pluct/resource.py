@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
+from urlparse import urljoin
 
 import requests
-
 from jsonschema import validate, SchemaError, ValidationError
 
 from pluct import schema
@@ -13,7 +13,7 @@ from pluct.schema import Schema
 def add_methods(resource, s, auth=None):
     for link in getattr(s, "links", []) or []:
         method = link.get("method", "GET")
-        href = link.get("href")
+        href = urljoin(resource.url, link.get("href"))
         rel = link.get("rel")
         method_class = Request(method, href, auth, resource)
         setattr(resource, rel, method_class.process)
