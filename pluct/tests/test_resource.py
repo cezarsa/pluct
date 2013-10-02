@@ -156,6 +156,21 @@ class ResourceTestCase(TestCase):
             timeout=10
         )
 
+    def test_schema_without_title_is_valid(self):
+        data = {
+            u'name': u'foo'
+        }
+        self.schema = schema.Schema(
+            url="url.com",
+            type="object",
+            properties={
+                u'name': {u'type': u'string'}
+            }
+        )
+        app = resource.Resource(url="http://appurl.com", data=data,
+                                schema=self.schema, timeout=10)
+        self.assertTrue(app.is_valid())
+
     @patch('pluct.resource.from_response')
     @patch("requests.get")
     def test_extra_parameters_uri_name_bug(self, get, resource_from_response):
@@ -221,7 +236,8 @@ class ResourceTestCase(TestCase):
 
     @patch('pluct.resource.from_response')
     @patch("requests.get")
-    def test_handle_links_with_relative_and_absolute_urls(self, get, resource_from_response):
+    def test_links_relative_or_absolute_urls(self, get,
+                                             resource_from_response):
         links = [{
             "href": "{name}",
             "method": "GET",
@@ -232,7 +248,8 @@ class ResourceTestCase(TestCase):
             "rel": "absolute_link"
         }]
         self.schema.links += links
-        app = resource.Resource(url="http://appurl.com/something/", data=self.data,
+        app = resource.Resource(url="http://appurl.com/something/",
+                                data=self.data,
                                 schema=self.schema)
 
         app.relative_link()

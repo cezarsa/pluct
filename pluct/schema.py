@@ -13,7 +13,8 @@ class Schema(object):
         self.type = type
         if required:
             self.required = required
-        self.title = title
+        if title:
+            self.title = title
         if properties:
             self.properties = properties
         if links:
