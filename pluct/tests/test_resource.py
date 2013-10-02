@@ -195,6 +195,30 @@ class ResourceTestCase(TestCase):
 
     @patch('pluct.resource.from_response')
     @patch("requests.get")
+    def test_extra_parameters_uri_joins_qs(self, get, resource_from_response):
+        data = {
+            u'name': u'repos',
+            u'platform': u'repos',
+        }
+        link = {
+            "href": "?lines={lines}",
+            "method": "GET",
+            "rel": "example"
+        }
+        self.schema.links.append(link)
+        app = resource.Resource(url="http://appurl.com", data=data,
+                                schema=self.schema)
+
+        app.example(lines=10, doo='value')
+        url = 'http://appurl.com?lines=10&doo=value'
+        get.assert_called_with(
+            url=url,
+            headers={'content-type': 'application/json'},
+            timeout=30
+        )
+
+    @patch('pluct.resource.from_response')
+    @patch("requests.get")
     def test_schema_with_property_type_array(self, get, from_response):
         s = schema.Schema(
             title="title",

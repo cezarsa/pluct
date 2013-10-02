@@ -4,8 +4,17 @@
 import ujson
 import requests
 import urllib
+import urlparse
 
 from uritemplate import expand
+
+
+def append_query_params(url, params):
+    parts = list(urlparse.urlsplit(url))
+    query = urlparse.parse_qs(parts[3])
+    query.update(params)
+    parts[3] = urllib.urlencode(query, doseq=True)
+    return urlparse.urlunsplit(parts)
 
 
 class Request(object):
@@ -26,9 +35,7 @@ class Request(object):
         for var in kwargs.keys():
             if "{{{}}}".format(var) in self.href:
                 kwargs.pop(var)
-        querystring = urllib.urlencode(kwargs)
-        if querystring:
-            url += "?{0}".format(querystring)
+        url = append_query_params(url, kwargs)
 
         response = requests.get(url=url,
                                 headers=self.get_headers(),
